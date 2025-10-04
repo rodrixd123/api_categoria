@@ -1,15 +1,20 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import os
 
 app = Flask(__name__)
 
-# 🔗 Conexión Railway (usando pymysql)
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:gzGmMybpEUnAsvoNuOeUWzefhUiDDjlN@caboose.proxy.rlwy.net:43751/railway"
+# 🔗 Conexión Railway (usando variable de entorno)
+# Configura DATABASE_URL en Render con tu cadena de conexión
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    "DATABASE_URL",
+    "mysql+pymysql://root:gzGmMybpEUnAsvoNuOeUWzefhUiDDjlN@caboose.proxy.rlwy.net:43751/railway"
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Modelo Categoría (ajustado a tu BD)
+# Modelo Categoría
 class Categoria(db.Model):
     __tablename__ = "categorias"   # 👈 nombre real de la tabla
 
@@ -18,6 +23,7 @@ class Categoria(db.Model):
 
     def to_dict(self):
         return {"id_cat": self.id_cat, "nom_cat": self.nom_cat}
+
 
 # Rutas CRUD
 @app.route("/categorias", methods=["GET"])
@@ -35,7 +41,7 @@ def get_categoria(id_cat):
 @app.route("/categorias", methods=["POST"])
 def add_categoria():
     data = request.json
-    nueva = Categoria(nom_cat=data["nom_cat"])   # 👈 usamos nom_cat, no nombre
+    nueva = Categoria(nom_cat=data["nom_cat"])
     db.session.add(nueva)
     db.session.commit()
     return jsonify(nueva.to_dict()), 201
@@ -59,5 +65,7 @@ def delete_categoria(id_cat):
     db.session.commit()
     return jsonify({"mensaje": "Categoría eliminada correctamente"})
 
+
+# ⚠️ Solo para pruebas locales (no se ejecuta en Render)
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3001, debug=True)
+    app.run(debug=True, port=3001)
